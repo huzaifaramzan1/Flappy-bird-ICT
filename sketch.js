@@ -1,70 +1,105 @@
 function preload() {
-    // Load background and image assets
-    backgroundImg = loadImage("assets/flappy-bird.gif");
+    backgroundImg = loadImage("assets/background-day.png");
     objectImg = loadImage("assets/pngwing.com.png");
-    textSize(50);  // Set text size for "Game Over" message
+    blockImg = loadImage("assets/pipe-green.png");
+    blockImg = loadImage("assets/pipe-green.png");
+    textSize(50);
 }
 
 function setup() {
-    createCanvas(1320, 600);
+    createCanvas(700, 700);
     noStroke();
 
-    // Initialize object position and variables
-    objectX = width / 2;
+    objectX = width / 4;
     objectY = height / 2;
     ySpeed = 0;
     gravity = 0.5;
 
-    isPaused = false;  // Track paused state
+    backgroundOffsetX = 0;
+    blocks = [];
+
+    isPaused = false;
 }
 
 function draw() {
-    if (!isPaused) {
-        // Display background image
-        image(backgroundImg, 0, 0, width, height);
+    stopForeground = true;
+    imageMode(CORNER);
 
-        // Apply gravity and update object position
+    if (!isPaused) {
+        backgroundOffsetX -= 5;
+        image(backgroundImg, backgroundOffsetX, 0, width, height);
+        if (backgroundOffsetX < -backgroundImg.width) {
+            backgroundOffsetX = 0;
+        }
+
         ySpeed += gravity;
         objectY += ySpeed;
 
-        // Forward movement for the object
-        objectX += 2;
-
-        // Check for top and bottom collisions, bounce, and pause
-        if (objectY < 0 || objectY > height - objectImg.height) {
-            ySpeed *= -0.8;
-            if (objectY < 0) {
-                objectY = 0;  // Set to top edge if hitting above
-            } else {
-                objectY = height - objectImg.height;  // Set to bottom edge if hitting below
-            }
+        if (objectY < 0 || objectY > height - objectImg.height) { // Check for top/bottom collision
             isPaused = true;
-            noLoop(); // This pauses the draw loop
-            textSize(40);  // Set text size
-            fill(15, 70, 129);  // Set text color to red
-            text("Game Over! press spacebar again to restart", width / 2 - 340, height / 2-  20);  // Adjust for wider text
+            noLoop();
+            fill(255);
+            text("Game Over", width / 2 - 120, height / 2);
+        }
+        objectX = constrain(objectX, 40, width - 40);
+
+        if (frameCount % 50 === 0) {
+            const gapHeight = random(100, height - 400);
+            const topBlockY = random(0, height - gapHeight - blockImg.height - objectImg.height);
+            blocks.push(new Block(topBlockY, gapHeight));
         }
 
-        // Check if object reaches right edge of screen and reset position
-        if (objectX > width) {
-            objectX = 0;  // Start from left side again
+        for (let i = 0; i < blocks.length; i++) {
+            blocks[i].update();
+            blocks[i].draw();
+
+            if (blocks[i].isColliding(objectX, objectY, objectImg.width, objectImg.height)) {
+                isPaused = true;
+                noLoop();
+                fill(255);
+                text("Game Over", width / 2 - 120, height / 2);
+            }
         }
 
-        // Draw the object image
+        blocks = blocks.filter(block => block.x > -blockImg.width);
+
         image(objectImg, objectX, objectY);
     }
 }
 
-// Function to handle spacebar press for jumping and restarting
 function keyPressed() {
-    if (keyCode === 32) {  // Spacebar key code
+    if (keyCode === 32) {
         if (isPaused) {
-            // Restart the game
-            setup();  // Reset game variables
-            loop();  // Resume the draw loop
+            setup();
+            loop();
         } else {
-            // Trigger a jump
             ySpeed = -10;
         }
+    }
+}
+
+class Block {
+    constructor(topBlockY, gapHeight) {
+        this.x = width;
+        this.topBlockY = topBlockY;
+        this.bottomBlockY = topBlockY + blockImg.height + gapHeight;
+    }
+
+    update() {
+        this.x -= 5;
+    }
+
+    draw() {
+        image(blockImg, this.x, this.topBlockY);
+        image(blockImg, this.x, this.bottomBlockY);
+    }
+
+    isColliding(objectX, objectY, objectWidth, objectHeight) {
+        return (
+            objectX + objectWidth > this.x &&
+            objectX < this.x + blockImg.width &&
+            (objectY + objectHeight > this.topBlockY && objectY < this.topBlockY + blockImg.height ||
+                objectY + objectHeight > this.bottomBlockY && objectY < this.bottomBlockY + blockImg.height)
+        );
     }
 }
