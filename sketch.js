@@ -31,6 +31,25 @@ function setup() {
         programLoadSound.play();
         isFirstLoad = false;
     }
+
+    // Add touch event listener for mobile
+    document.addEventListener('touchstart', handleTouch);
+}
+
+// Handle touch events
+function handleTouch() {
+    if (!gameStarted) {
+        gameStarted = true;
+        points = 0;
+        pipes = [];
+        bird.startGravity();
+        jumpSound.play();
+    } else if (isGameOver) {
+        gameStarted = false;
+        isGameOver = false;
+    } else {
+        bird.up();
+    }
 }
 
 function draw() {
@@ -64,15 +83,15 @@ function draw() {
         textAlign(CENTER);
         textSize(32);
         fill(255);
-        text("Press SPACE to start", width / 2, height / 2);
+        text("Press SPACE or tap to start", width / 2, height / 2);
 
         // Reset the bird's position when game is not started
         bird.resetPosition(width / 4, height / 2);
     } else if (isGameOver) {
         textAlign(CENTER);
-        textSize(32);
-        fill(255, 0, 0);
-        text("Game Over", width / 2, height / 2 + 40);
+        textSize(16);
+        fill(255, 145, 0);
+        text("Game Over, press spacebar or tap to restart", width / 2, height / 2 + 20);
         textSize(24);
         text("Points: " + points, width / 2, height / 2 + 80);
     }
