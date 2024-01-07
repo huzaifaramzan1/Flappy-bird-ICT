@@ -26,30 +26,7 @@ function preload() {
 function setup() {
     createCanvas(400, 600);
     bird = new Bird();
-
-    if (isFirstLoad) {
-        programLoadSound.play();
-        isFirstLoad = false;
-    }
-
-    // Add touch event listener for mobile
-    document.addEventListener('touchstart', handleTouch);
-}
-
-// Handle touch events
-function handleTouch() {
-    if (!gameStarted) {
-        gameStarted = true;
-        points = 0;
-        pipes = [];
-        bird.startGravity();
-        jumpSound.play();
-    } else if (isGameOver) {
-        gameStarted = false;
-        isGameOver = false;
-    } else {
-        bird.up();
-    }
+    programLoadSound.play();
 }
 
 function draw() {
@@ -68,11 +45,11 @@ function draw() {
             pipes[i].show();
 
             if (pipes[i].hits(bird)) {
-                hitSound.play();
+                hitSound.play(); // Play the hit sound
                 gamePaused();
             } else if (pipes[i].passed(bird)) {
                 points++;
-                pointSound.play();
+                pointSound.play(); // Play the point sound
             }
 
             if (pipes[i].offscreen()) {
@@ -80,22 +57,23 @@ function draw() {
             }
         }
     } else if (!gameStarted) {
+        // Display initial message or anything else you want to show
         textAlign(CENTER);
         textSize(32);
         fill(255);
-        text("Press SPACE or tap to start", width / 2, height / 2);
-
-        // Reset the bird's position when game is not started
-        bird.resetPosition(width / 4, height / 2);
+        text("Press SPACE or Tap to start", width / 2, height / 2);
+        bird.show(); // Display bird in the center before starting
     } else if (isGameOver) {
+        // Display game over message and points
         textAlign(CENTER);
-        textSize(16);
-        fill(255, 150, 0);
-        text("Game Over, press spacebar or tap to restart", width / 2, height / 2 + 20);
+        textSize(32);
+        fill(255, 0, 0);
+        text("Game Over", width / 2, height / 2 + 40);
         textSize(24);
         text("Points: " + points, width / 2, height / 2 + 80);
     }
 
+    // Display points on the top right
     textAlign(RIGHT);
     textSize(24);
     fill(255);
@@ -103,42 +81,47 @@ function draw() {
 }
 
 function keyPressed() {
-    if ((key === ' ' && !gameStarted) || (touches.length > 0 && !gameStarted)) {
-        gameStarted = true;
-        points = 0;
-        pipes = [];
-        bird.startGravity();
-        jumpSound.play();
-        touches = [];
+    if (key === ' ' && !gameStarted) {
+        startGame();
     } else if (key === ' ' && gameStarted && isGameOver) {
-        gameStarted = false;
-        isGameOver = false;
-    } else if ((key === ' ' && gameStarted) || (touches.length > 0 && gameStarted)) {
+        restartGame();
+    } else if (key === ' ' && gameStarted) {
         bird.up();
-        touches = [];
     }
 }
 
 function touchStarted() {
-    if (!gameStarted || (gameStarted && isGameOver)) {
-        gameStarted = true;
-        points = 0;
-        pipes = [];
-        bird.startGravity();
-        jumpSound.play();
+    if (!gameStarted) {
+        startGame();
+    } else if (gameStarted && isGameOver) {
+        restartGame();
     } else if (gameStarted) {
         bird.up();
     }
+    return false; // prevent default
+}
 
-    return false; // Prevent default behavior of touch events
+function startGame() {
+    gameStarted = true;
+    points = 0;
+    pipes = [];
+    bird = new Bird(); // Reset the bird when the game starts
+    bird.startGravity();
+    jumpSound.play(); // Play the jump sound
+}
+
+function restartGame() {
+    gameStarted = false;
+    isGameOver = false;
 }
 
 function Bird() {
-    this.y = height / 2;
+    this.y = height / 2; // Start at the middle of the screen
     this.x = width / 4;
     this.velocityY = 0;
-    this.gravityActive = false;
-    this.tiltAngle = 0;
+    this.gravityActive = false; // Flag to indicate if gravity should be active
+    this.tiltAngle = 0; // Tilt angle
+    this.targetTilt = 0; // Target tilt angle
 
     this.show = function () {
         push();
@@ -149,20 +132,14 @@ function Bird() {
         pop();
     };
 
-    this.resetPosition = function (x, y) {
-        this.x = x;
-        this.y = y;
-        this.velocityY = 0;
-    };
-
     this.startGravity = function () {
         this.gravityActive = true;
     };
 
     this.up = function () {
         if (this.gravityActive) {
-            this.velocityY = -8;
-            jumpSound.play();
+            this.velocityY = -8; // Immediate jump
+            jumpSound.play(); // Play the jump sound
         }
     };
 
@@ -171,13 +148,17 @@ function Bird() {
             this.velocityY += gravity;
             this.y += this.velocityY;
 
+            // Set the target tilt based on the bird's velocity
             this.targetTilt = map(this.velocityY, 0, 8, 0, 15);
+
+            // Smoothly interpolate the current tilt angle towards the target tilt angle
             this.tiltAngle = lerp(this.tiltAngle, this.targetTilt, 0.2);
 
+            // Prevent bird from going off the screen
             this.y = constrain(this.y, 0, height);
 
             if (this.hitsTop() || this.hitsBottom()) {
-                hitSound.play();
+                hitSound.play(); // Play the hit sound
                 gamePaused();
             }
         }
@@ -215,6 +196,7 @@ function Pipe() {
     };
 
     this.hits = function (bird) {
+        // Check if the bird hits the boundaries of the pipe
         return (
             bird.x + 10 > this.x && bird.x - 10 < this.x + this.w &&
             (bird.y - 10 < this.top || bird.y + 10 > height - this.bottom)
@@ -222,10 +204,12 @@ function Pipe() {
     };
 
     this.passed = function (bird) {
+        // Check if the bird has passed through the pipe
         return bird.x > this.x + this.w / 2 && bird.x < this.x + this.speed + this.w / 2;
     };
 }
 
 function gamePaused() {
     isGameOver = true;
+    console.log("Game Over");
 }
