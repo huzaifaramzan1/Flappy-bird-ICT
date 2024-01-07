@@ -20,7 +20,7 @@ function preload() {
     hitSound = loadSound('assets/hit.wav');
     jumpSound = loadSound('assets/wing.wav');
     pointSound = loadSound('assets/point.wav');
-   // programLoadSound = loadSound('assets/Oo ki haal chaal aye theek ho na bhola record.wav');
+    programLoadSound = loadSound('assets/swoosh.wav');
 }
 
 function setup() {
@@ -90,7 +90,7 @@ function draw() {
     } else if (isGameOver) {
         textAlign(CENTER);
         textSize(16);
-        fill(255, 145, 0);
+        fill(255, 150, 0);
         text("Game Over, press spacebar or tap to restart", width / 2, height / 2 + 20);
         textSize(24);
         text("Points: " + points, width / 2, height / 2 + 80);
