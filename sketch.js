@@ -1,105 +1,212 @@
+let bird;
+let pipes = [];
+let backgroundImage;
+let birdImage;
+let pipeImage;
+let gravity = 0.6;
+let gameStarted = false;
+let isGameOver = false;
+let points = 0;
+let jumpSound;
+let hitSound;
+let pointSound;
+let programLoadSound;
+let isFirstLoad = true;
+
 function preload() {
-    backgroundImg = loadImage("assets/background-day.png");
-    objectImg = loadImage("assets/pngwing.com.png");
-    blockImg = loadImage("assets/pipe-green.png");
-    blockImg = loadImage("assets/pipe-green.png");
-    textSize(50);
+    backgroundImage = loadImage('assets/background-day.png');
+    birdImage = loadImage('assets/bird.png');
+    pipeImage = loadImage('assets/pipe-green.png');
+    hitSound = loadSound('assets/hit.wav');
+    jumpSound = loadSound('assets/wing.wav');
+    pointSound = loadSound('assets/point.wav');
+    programLoadSound = loadSound('assets/Oo ki haal chaal aye theek ho na bhola record.wav');
 }
 
 function setup() {
-    createCanvas(700, 700);
-    noStroke();
+    createCanvas(400, 600);
+    bird = new Bird();
 
-    objectX = width / 4;
-    objectY = height / 2;
-    ySpeed = 0;
-    gravity = 0.5;
-
-    backgroundOffsetX = 0;
-    blocks = [];
-
-    isPaused = false;
+    if (isFirstLoad) {
+        programLoadSound.play();
+        isFirstLoad = false;
+    }
 }
 
 function draw() {
-    stopForeground = true;
-    imageMode(CORNER);
+    background(backgroundImage);
 
-    if (!isPaused) {
-        backgroundOffsetX -= 5;
-        image(backgroundImg, backgroundOffsetX, 0, width, height);
-        if (backgroundOffsetX < -backgroundImg.width) {
-            backgroundOffsetX = 0;
+    if (gameStarted && !isGameOver) {
+        bird.update();
+        bird.show();
+
+        if (frameCount % 75 === 0) {
+            pipes.push(new Pipe());
         }
 
-        ySpeed += gravity;
-        objectY += ySpeed;
+        for (let i = pipes.length - 1; i >= 0; i--) {
+            pipes[i].update();
+            pipes[i].show();
 
-        if (objectY < 0 || objectY > height - objectImg.height) { // Check for top/bottom collision
-            isPaused = true;
-            noLoop();
-            fill(255);
-            text("Game Over", width / 2 - 120, height / 2);
-        }
-        objectX = constrain(objectX, 40, width - 40);
+            if (pipes[i].hits(bird)) {
+                hitSound.play();
+                gamePaused();
+            } else if (pipes[i].passed(bird)) {
+                points++;
+                pointSound.play();
+            }
 
-        if (frameCount % 50 === 0) {
-            const gapHeight = random(100, height - 400);
-            const topBlockY = random(0, height - gapHeight - blockImg.height - objectImg.height);
-            blocks.push(new Block(topBlockY, gapHeight));
-        }
-
-        for (let i = 0; i < blocks.length; i++) {
-            blocks[i].update();
-            blocks[i].draw();
-
-            if (blocks[i].isColliding(objectX, objectY, objectImg.width, objectImg.height)) {
-                isPaused = true;
-                noLoop();
-                fill(255);
-                text("Game Over", width / 2 - 120, height / 2);
+            if (pipes[i].offscreen()) {
+                pipes.splice(i, 1);
             }
         }
+    } else if (!gameStarted) {
+        textAlign(CENTER);
+        textSize(32);
+        fill(255);
+        text("Press SPACE to start", width / 2, height / 2);
 
-        blocks = blocks.filter(block => block.x > -blockImg.width);
-
-        image(objectImg, objectX, objectY);
+        // Reset the bird's position when game is not started
+        bird.resetPosition(width / 4, height / 2);
+    } else if (isGameOver) {
+        textAlign(CENTER);
+        textSize(32);
+        fill(255, 0, 0);
+        text("Game Over", width / 2, height / 2 + 40);
+        textSize(24);
+        text("Points: " + points, width / 2, height / 2 + 80);
     }
+
+    textAlign(RIGHT);
+    textSize(24);
+    fill(255);
+    text("Points: " + points, width - 20, 30);
 }
 
 function keyPressed() {
-    if (keyCode === 32) {
-        if (isPaused) {
-            setup();
-            loop();
-        } else {
-            ySpeed = -10;
-        }
+    if ((key === ' ' && !gameStarted) || (touches.length > 0 && !gameStarted)) {
+        gameStarted = true;
+        points = 0;
+        pipes = [];
+        bird.startGravity();
+        jumpSound.play();
+        touches = [];
+    } else if (key === ' ' && gameStarted && isGameOver) {
+        gameStarted = false;
+        isGameOver = false;
+    } else if ((key === ' ' && gameStarted) || (touches.length > 0 && gameStarted)) {
+        bird.up();
+        touches = [];
     }
 }
 
-class Block {
-    constructor(topBlockY, gapHeight) {
-        this.x = width;
-        this.topBlockY = topBlockY;
-        this.bottomBlockY = topBlockY + blockImg.height + gapHeight;
+function touchStarted() {
+    if (!gameStarted || (gameStarted && isGameOver)) {
+        gameStarted = true;
+        points = 0;
+        pipes = [];
+        bird.startGravity();
+        jumpSound.play();
+    } else if (gameStarted) {
+        bird.up();
     }
 
-    update() {
-        this.x -= 5;
-    }
+    return false; // Prevent default behavior of touch events
+}
 
-    draw() {
-        image(blockImg, this.x, this.topBlockY);
-        image(blockImg, this.x, this.bottomBlockY);
-    }
+function Bird() {
+    this.y = height / 2;
+    this.x = width / 4;
+    this.velocityY = 0;
+    this.gravityActive = false;
+    this.tiltAngle = 0;
 
-    isColliding(objectX, objectY, objectWidth, objectHeight) {
+    this.show = function () {
+        push();
+        translate(this.x, this.y);
+        rotate(radians(this.tiltAngle));
+        imageMode(CENTER);
+        image(birdImage, 0, 0, 50, 50);
+        pop();
+    };
+
+    this.resetPosition = function (x, y) {
+        this.x = x;
+        this.y = y;
+        this.velocityY = 0;
+    };
+
+    this.startGravity = function () {
+        this.gravityActive = true;
+    };
+
+    this.up = function () {
+        if (this.gravityActive) {
+            this.velocityY = -8;
+            jumpSound.play();
+        }
+    };
+
+    this.update = function () {
+        if (this.gravityActive) {
+            this.velocityY += gravity;
+            this.y += this.velocityY;
+
+            this.targetTilt = map(this.velocityY, 0, 8, 0, 15);
+            this.tiltAngle = lerp(this.tiltAngle, this.targetTilt, 0.2);
+
+            this.y = constrain(this.y, 0, height);
+
+            if (this.hitsTop() || this.hitsBottom()) {
+                hitSound.play();
+                gamePaused();
+            }
+        }
+    };
+
+    this.hitsTop = function () {
+        return this.y - 25 < 0;
+    };
+
+    this.hitsBottom = function () {
+        return this.y + 25 > height;
+    };
+}
+
+function Pipe() {
+    this.spacing = 125;
+    this.top = random(height / 6, (3 / 4) * height);
+    this.bottom = height - (this.top + this.spacing);
+    this.x = width;
+    this.w = 50;
+    this.speed = 2;
+
+    this.show = function () {
+        imageMode(CORNER);
+        image(pipeImage, this.x, 0, this.w, this.top);
+        image(pipeImage, this.x, height - this.bottom, this.w, this.bottom);
+    };
+
+    this.update = function () {
+        this.x -= this.speed;
+    };
+
+    this.offscreen = function () {
+        return this.x < -this.w;
+    };
+
+    this.hits = function (bird) {
         return (
-            objectX + objectWidth > this.x &&
-            objectX < this.x + blockImg.width &&
-            (objectY + objectHeight > this.topBlockY && objectY < this.topBlockY + blockImg.height ||
-                objectY + objectHeight > this.bottomBlockY && objectY < this.bottomBlockY + blockImg.height)
+            bird.x + 10 > this.x && bird.x - 10 < this.x + this.w &&
+            (bird.y - 10 < this.top || bird.y + 10 > height - this.bottom)
         );
-    }
+    };
+
+    this.passed = function (bird) {
+        return bird.x > this.x + this.w / 2 && bird.x < this.x + this.speed + this.w / 2;
+    };
+}
+
+function gamePaused() {
+    isGameOver = true;
 }
