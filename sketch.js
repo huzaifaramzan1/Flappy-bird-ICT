@@ -20,7 +20,7 @@ function preload() {
     hitSound = loadSound('assets/hit.wav');
     jumpSound = loadSound('assets/wing.wav');
     pointSound = loadSound('assets/point.wav');
-    programLoadSound = loadSound('assets/Oo ki haal chaal aye theek ho na bhola record.wav');
+   // programLoadSound = loadSound('assets/Oo ki haal chaal aye theek ho na bhola record.wav');
 }
 
 function setup() {
