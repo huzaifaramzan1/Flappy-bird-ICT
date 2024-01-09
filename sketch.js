@@ -13,7 +13,7 @@ let pointSound;
 let programLoadSound;
 let isFirstLoad = true;
 
-function preload() {
+function preload() { 
     backgroundImage = loadImage('assets/background-day.png');
     birdImage = loadImage('assets/bird.png');
     pipeImage = loadImage('assets/pipe-green.png');
@@ -67,7 +67,7 @@ function draw() {
         // Display game over message and points
         textAlign(CENTER);
         textSize(32);
-        fill(255, 0, 0);
+        fill(255, 120,70);
         text("Game Over", width / 2, height / 2 + 40);
         textSize(24);
         text("Points: " + points, width / 2, height / 2 + 80);
@@ -174,11 +174,11 @@ function Bird() {
 }
 
 function Pipe() {
-    this.spacing = 125;
-    this.top = random(height / 6, (3 / 4) * height);
+    this.spacing = 130;
+    this.top = random(height / 7, (3 / 5) * height);
     this.bottom = height - (this.top + this.spacing);
     this.x = width;
-    this.w = 50;
+    this.w = 55;
     this.speed = 2;
 
     this.show = function () {
