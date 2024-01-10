@@ -174,12 +174,12 @@ function Bird() {
 }
 
 function Pipe() {
-    this.spacing = 130;
-    this.top = random(height / 7, (3 / 5) * height);
+    this.spacing = 150;
+    this.top = random(height / 8, (3 / 7) * height);
     this.bottom = height - (this.top + this.spacing);
     this.x = width;
-    this.w = 55;
-    this.speed = 2;
+    this.w = 45;
+    this.speed = 1.75;
 
     this.show = function () {
         imageMode(CORNER);
@@ -198,8 +198,8 @@ function Pipe() {
     this.hits = function (bird) {
         // Check if the bird hits the boundaries of the pipe
         return (
-            bird.x + 10 > this.x && bird.x - 10 < this.x + this.w &&
-            (bird.y - 10 < this.top || bird.y + 10 > height - this.bottom)
+            bird.x + 11 > this.x && bird.x - 11 < this.x + this.w &&
+            (bird.y - 11 < this.top || bird.y + 11 > height - this.bottom)
         );
     };
 
