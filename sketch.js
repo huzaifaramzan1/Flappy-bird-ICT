@@ -1,3 +1,6 @@
+//This game has been coded with love by Huzaifa Ramzan, Saad Asim, Hassan Aslam and Reyan. This game is a replica of a famous game called the "Flappy Bird" we have added comments and divided the codes into different components for our ease, as well as the teachers ease.
+
+//All the required variables have been declared at the start
 let bird;
 let pipes = [];
 let backgroundImage;
@@ -13,6 +16,7 @@ let pointSound;
 let programLoadSound;
 let isFirstLoad = true;
 
+//Here we have used the preload funcion of JS to preload our game assets upon the loading of website
 function preload() { 
     backgroundImage = loadImage('assets/background-day.png');
     birdImage = loadImage('assets/bird.png');
@@ -22,7 +26,7 @@ function preload() {
     pointSound = loadSound('assets/point.wav');
     programLoadSound = loadSound('assets/swoosh.wav');
 }
-
+//basic canvas setup
 function setup() {
     createCanvas(400, 600);
     bird = new Bird();
@@ -79,7 +83,9 @@ function draw() {
     fill(255);
     text("Points: " + points, width - 20, 30);
 }
+//Huzaifa Ramzan end
 
+//Reyan start
 function keyPressed() {
     if (key === ' ' && !gameStarted) {
         startGame();
@@ -114,7 +120,9 @@ function restartGame() {
     gameStarted = false;
     isGameOver = false;
 }
+//reyan End
 
+//Saad start
 function Bird() {
     this.y = height / 2; // Start at the middle of the screen
     this.x = width / 4;
@@ -172,13 +180,15 @@ function Bird() {
         return this.y + 25 > height;
     };
 }
+//saad end
 
+//hassan start
 function Pipe() {
     this.spacing = 150;
     this.top = random(height / 8, (3 / 7) * height);
     this.bottom = height - (this.top + this.spacing);
     this.x = width;
-    this.w = 45;
+    this.w = 50;
     this.speed = 1.75;
 
     this.show = function () {
@@ -213,3 +223,4 @@ function gamePaused() {
     isGameOver = true;
     console.log("Game Over");
 }
+//Hassan end
